@@ -93,7 +93,7 @@ public class MainClass {
         }
         disconnect();
     }
-
+	//Метод для выборки товара из заданного диапазона
     private static void titlesInRange(String fullCommand) {
         ResultSet resultSet;
         String[] rerultSetArr = fullCommand.split(" ");
