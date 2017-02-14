@@ -7,13 +7,13 @@ import java.io.PrintWriter;
  * Created by Валентин Фалин on 05.02.2017.
  * Урок 4. Многопоточность
  * - Создать три потока, каждый из которых выводит определенную букву(A, B и C) 5 раз, порядок
- *   должен быть именно ABСABСABС. Используйте wait/notify/notifyAll.
+ * должен быть именно ABСABСABС. Используйте wait/notify/notifyAll.
  * - Написать совсем небольшой метод, в котором 3 потока построчно пишут данные в файл (штук
- *   по 10 записей, с периодом в 20 мс)
+ * по 10 записей, с периодом в 20 мс)
  * - Написать класс МФУ на котором возможны одновременная печать и сканирование
- *   документов, при этом нельзя одновременно печатать два документа или сканировать (при
- *   печати в консоль выводится сообщения "отпечатано 1, 2, 3,... страницы", при сканировании то
- *   же самое только "отсканировано...", вывод в консоль все также с периодом в 50 мс.)
+ * документов, при этом нельзя одновременно печатать два документа или сканировать (при
+ * печати в консоль выводится сообщения "отпечатано 1, 2, 3,... страницы", при сканировании то
+ * же самое только "отсканировано...", вывод в консоль все также с периодом в 50 мс.)
  */
 public class MainClass {
     private static char[] chars = {'A', 'B', 'C'};
@@ -26,40 +26,12 @@ public class MainClass {
         new Thread(() -> printChar(chars[1], chars[0])).start();
         new Thread(() -> printChar(chars[2], chars[1])).start();
         //part 2
-        //Надеюсь я правильно понял 2е задание и не нужно было ничего синхронизировать :)
         threeWriters();
         //part 3
-        System.out.println();
-        MFU mfu = new MFU(10);//В конструкторе указываем сколько листов закладываем в ящик МФУ
-        for (int i = 1; i <= 3; i++) { //Создаем 3 потока для печати из МФУ
-            int finalI = i;
-            new Thread(() -> {
-                while (mfu.checkBox()) { //Проверка на оставшееся количество листов, которые доступны для печати
-                    mfu.printList(finalI); //Печатаем
-                    try {
-                        Thread.sleep(50);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }).start();
-        }
-        for (int i = 1; i <= 3; i++) { //Создаем 3 потока для сканирования
-            int finalI = i;
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    for (int j = 1; j <= 4; j++) { //Сканировать будет по 4 раза каздым потоком, т.к. думаю эта операция не ограничена необходимыми материалами для нее :)
-                        mfu.scanList(finalI, j);//Сканируем
-                        try {
-                            Thread.sleep(50);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            }).start();
-        }
+        MFU mfu = new MFU(10);//В конструкторе указываем сколько листов бумаги закладываем в ящик МФУ
+        new Thread(() -> mfu.printList("Война и Мир в двух словах", 6)).start();
+        new Thread(() -> mfu.printList("Преступление и Наказание в деталях", 5)).start();
+        new Thread(() -> mfu.scanList("Школьный фотоальбом", 5)).start();
     }
 
     private static void threeWriters() {
@@ -70,7 +42,7 @@ public class MainClass {
                 new Thread(() -> {
                     try {
                         for (int j = 1; j < 11; j++) {
-                            pw.append("Поток " + finalI + ", cтрока " + j + "\n");
+                            pw.append("Поток " + finalI + ", cтрока " + j + Thread.currentThread().getName() + "\n");
                             pw.flush();
                             Thread.sleep(20);
                         }
@@ -102,12 +74,12 @@ public class MainClass {
 
     public static class MFU {
         private int listsInBox;
-        private Object lock1 = new Object();
-        private Object lock2 = new Object();
+        private Object printLock = new Object();
+        private Object scanLock = new Object();
 
         public MFU(int listsInBox) {
             this.listsInBox = listsInBox;
-            System.out.println("В МФУ загружено страниц:" + listsInBox);
+            System.out.printf("\nВ МФУ загружено страниц: %s\n", listsInBox);
         }
 
         public boolean checkBox() {
@@ -117,16 +89,34 @@ public class MainClass {
             return true;
         }
 
-        public void printList(int i) {
-            synchronized (lock1) {
-                System.out.println("Отпечатана страница. Отпеатал поток №" + i + ". Осталось отпечатать:" + listsInBox);
-                listsInBox--;
+        public void printList(String fileName, int lists) {
+            synchronized (printLock) {
+                for (int i = 1; i <= lists; i++) {
+                    if (!checkBox()) {
+                        System.out.printf("В МФУ закончилась бумага!!! Документ <%s> напечатан не полностью.\n", fileName);
+                        break;
+                    }
+                    System.out.printf("Печатается документ <%s>, страница %d из %d\n", fileName, i, lists);
+                    listsInBox--;
+                    try {
+                        Thread.sleep(300);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         }
 
-        public void scanList(int i, int j) {
-            synchronized (lock2) {
-                System.out.println("Отсканирована страница №" + j + ". Отсканировал поток №" + i);
+        public void scanList(String fileName, int lists) {
+            synchronized (scanLock) {
+                for (int i = 1; i <= lists; i++) {
+                    System.out.printf("Сканируется документ <%s>, страница %d из %d\n", fileName, i, lists);
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         }
     }
