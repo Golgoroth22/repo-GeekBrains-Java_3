@@ -12,9 +12,11 @@ package java_3.lesson_5;
 
 public class MainClass {
     public static final int CARS_COUNT = 4;
+    public static final String preparationMessage = "ВАЖНОЕ ОБЪЯВЕНИЕ >>> Подготовка!!!";
+    public static final String startMessage = "ВАЖНОЕ ОБЪЯВЕНИЕ >>> Гонка началась!!!";
+    public static final String finishMessage = "ВАЖНОЕ ОБЪЯВЕНИЕ >>> Гонка закончилась!!!";
 
     public static void main(String[] args) {
-        System.out.println("ВАЖНОЕ ОБЪЯВЕНИЕ >>> Подготовка!!!");
         Race race = new Race(new Road(60), new Tunnel(), new Road(40));
         Car[] cars = new Car[CARS_COUNT];
         for (int i = 0; i < cars.length; i++) {
@@ -23,7 +25,5 @@ public class MainClass {
         for (int i = 0; i < cars.length; i++) {
             new Thread(cars[i]).start();
         }
-        System.out.println("ВАЖНОЕ ОБЪЯВЕНИЕ >>> Гонка началась!!!");
-        System.out.println("ВАЖНОЕ ОБЪЯВЕНИЕ >>> Гонка закончилась!!!");
     }
 }
