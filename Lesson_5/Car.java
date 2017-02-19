@@ -3,9 +3,9 @@ package java_3.lesson_5;
 import java.util.concurrent.CyclicBarrier;
 
 public class Car implements Runnable {
-    private String winMessage = " - WIN";
     public static CyclicBarrier cyclicBarrier;
     private static int CARS_COUNT;
+    private static Object lock = new Object();
 
     static {
         CARS_COUNT = 0;
@@ -46,12 +46,14 @@ public class Car implements Runnable {
         for (int i = 0; i < race.getStages().size(); i++) {
             race.getStages().get(i).go(this);
         }
-        CARS_COUNT--;
-        if (MainClass.CARS_COUNT - 1 == CARS_COUNT) {
-            System.out.println(name + winMessage);
-        }
-        if (CARS_COUNT == 0) {
-            System.out.println(MainClass.finishMessage);
+        synchronized (lock) {
+            CARS_COUNT--;
+            if (MainClass.CARS_COUNT - 1 == CARS_COUNT) {
+                System.out.println(name + MainClass.winMessage);
+            }
+            if (CARS_COUNT == 0) {
+                System.out.println(MainClass.finishMessage);
+            }
         }
     }
 }
